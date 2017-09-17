@@ -10,23 +10,26 @@ socket.on('disconnect', function () {
 
 socket.on('newMessage', function (message) {
   var formattedTime = moment(message.createdAt).format('h:mm a');
-  var li = jQuery('<li></li>');
-  li.text(`${message.from} ${formattedTime}: ${message.text}`);
-
-  jQuery('#messages').append(li);
+  var template = jQuery('#message-template').html();
+  var html = Mustache.render(template, {
+    text: message.text,
+    from: message.from,
+    createdAt: formattedTime
+  })
+  jQuery('#messages').append(html);
 });
 
 socket.on('newLocationMessage', function(message) {
   var formattedTime = moment(message.createdAt).format('h:mm a');
-  var li  = jQuery('<li></li>');
-  var a   = jQuery('<a target="_blank">My current location</a>')
-  li.text(`${message.from} ${formattedTime}: `);
-  a.attr('href', message.url);
-  li.append(a);
-  jQuery('#messages').append(li);
+  var template = jQuery('#location-message-template').html();
 
+  var html = Mustache.render(template, {
+    from: message.from,
+    url: message.url,
+    createdAt: formattedTime
+  })
 
-  jQuery('#messages').append(li);
+  jQuery('#messages').append(html);
 });
 
 
@@ -49,18 +52,15 @@ locationButton.on('click', function() {
     return alert('Geolocation not supported by your browser');
   }
 
-  // Set the disabled attribute equal to the key value disabled, , and change the text attribute.
   locationButton.attr('disabled', 'disabled').text('Sending location...');
 
   navigator.geolocation.getCurrentPosition(function(position) {
-    // If the geolocation is successfully obtained, remove the disabled attribution of the location button, and change the text attribute.
     locationButton.removeAttr('disabled').text('Send location');
     socket.emit('createLocationMessage', {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude
     });
   }, function () {
-    // If the geolocation is not successfully obtained, remove the disabled attribution of the location button, , and change the text attribute.
     locationButton.removeAttr('disabled').text('Send location');
     alert('Unable to fetch location.')
   })
